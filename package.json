@@ -1,0 +1,14 @@
+{
+  "name": "mullvad-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mullvad VPN bar widget for omarchy-shell",
+  "license": "MIT",
+  "bin": {
+    "mullvad-plugin": "cli/index.ts"
+  },
+  "scripts": {
+    "mullvad-plugin": "bun cli/index.ts",
+    "test": "node test/model.test.js"
+  }
+}

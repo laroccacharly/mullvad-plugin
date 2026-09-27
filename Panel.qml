@@ -9,8 +9,8 @@ import "Model.js" as Model
 
 Panel {
   id: root
-  moduleName: "clarocca.mullvad"
-  ipcTarget: "clarocca.mullvad"
+  moduleName: "mullvad"
+  ipcTarget: "mullvad"
   manageIpc: false
 
   // Keyboard cursor: one id per navigable row, walked in `cursorOrder`.

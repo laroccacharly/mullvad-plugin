@@ -1,9 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "clarocca.mullvad",
+  "id": "mullvad",
   "name": "Mullvad VPN",
   "version": "0.1.0",
-  "author": "clarocca",
   "license": "MIT",
   "description": "Mullvad VPN status, exit location and IP, relay switching, quick settings, and account expiry in the Omarchy bar.",
   "kinds": [

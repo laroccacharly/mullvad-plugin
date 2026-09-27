@@ -37,13 +37,18 @@ Omarchy's first-party Tailscale widget. It gets everything from the `mullvad` CL
 
 ## IPC
 
+Call the widget's IPC through the CLI (it checks the shell is up and the widget is enabled first):
+
 ```bash
-omarchy-shell clarocca.mullvad toggle
-omarchy-shell clarocca.mullvad toggleConnection
-omarchy-shell clarocca.mullvad locations          # open the panel on the location search
-omarchy-shell clarocca.mullvad connect | disconnect | reconnect | refresh
-omarchy-shell clarocca.mullvad status
+bun mullvad-plugin run                     # list the available methods
+bun mullvad-plugin run toggle
+bun mullvad-plugin run toggleConnection
+bun mullvad-plugin run locations           # open the panel on the location search
+bun mullvad-plugin run connect | disconnect | reconnect | refresh
+bun mullvad-plugin run status
 ```
+
+`omarchy-shell mullvad <method>` works too.
 
 ## Settings
 
@@ -57,21 +62,28 @@ These go inline on the widget's entry in `~/.config/omarchy/shell.json`:
 
 ## Install
 
+Needs [Bun](https://bun.sh) and a running `omarchy-shell`. From this checkout:
+
 ```bash
-ln -s ~/Work/mullvad-plugin ~/.config/omarchy/plugins/clarocca.mullvad
-omarchy-shell shell rescanPlugins
-omarchy plugin enable clarocca.mullvad
-omarchy bar move clarocca.mullvad --section right   # optional
+bun mullvad-plugin install                  # link, rescan, enable (safe to re-run)
+bun mullvad-plugin install --section left   # placement, used only on the first enable
+bun mullvad-plugin reinstall                # load code changes (restarts the shell)
+bun mullvad-plugin uninstall                # disable and unlink
+bun mullvad-plugin status                   # link / enabled / shell state
 ```
 
-The shell's file watcher doesn't follow symlinks, so edits here don't hot-reload.
-Run `omarchy restart shell` to load them. A restart is also the only way to
-pick up changes to the IPC functions.
+`install` symlinks this checkout to `~/.config/omarchy/plugins/<id>`, where the id comes
+from `manifest.json`. It also removes older links to this checkout that use a different
+id. Run `bun link` once to get a global `mullvad-plugin` command.
+
+The shell's file watcher doesn't follow symlinks, and IPC functions are fixed when they
+first register. So edits don't hot-reload; `reinstall` restarts the shell to load them.
+It keeps the widget's bar position and settings.
 
 ## Tests
 
 The CLI parsers live in `Model.js` and don't depend on QML:
 
 ```bash
-node test/model.test.js
+bun run test
 ```
