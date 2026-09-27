@@ -29,6 +29,9 @@ Panel {
   readonly property color selectedFill: bar ? Style.selectedFillFor(bar.foreground, Color.accent) : "transparent"
 
   readonly property bool showDetails: mullvad.installed && (mullvad.connected || mullvad.transitioning) && mullvad.status.ipv4 !== ""
+  // Exit IPs and relay names are private; keep them collapsed unless the user
+  // asked to see them. Seeded from shell.json, flipped locally for instant UI.
+  property bool revealConnection: settings.showConnection === true
   readonly property var recentIds: settings.recentLocations instanceof Array ? settings.recentLocations : []
   readonly property var recentLocations: recentLocationNodes()
   readonly property var filteredLocations: Model.filterLocations(mullvad.locations, locationQuery)
@@ -46,7 +49,8 @@ Panel {
     var order = []
     if (!mullvad.installed) return order
     order.push("toggle")
-    if (showDetails) {
+    if (showDetails) order.push("details")
+    if (showDetails && revealConnection) {
       order.push("ipv4")
       if (mullvad.status.ipv6 !== "") order.push("ipv6")
       if (mullvad.status.hostname !== "") order.push("relay")
@@ -60,8 +64,9 @@ Panel {
       for (var r = 0; r < recentLocations.length; r++) order.push("recent:" + r)
     }
     if (mullvad.connected) order.push("reconnect")
-    order.push("lockdown", "autoconnect", "lan", "account")
+    order.push("account")
     if (mullvad.version.upgrade !== "") order.push("update")
+    order.push("lockdown", "autoconnect", "lan")
     return order
   }
 
@@ -104,11 +109,21 @@ Panel {
       var existing = String(recentIds[i] || "")
       if (existing !== "" && next.indexOf(existing) === -1) next.push(existing)
     }
+    persistSetting("recentLocations", next)
+  }
+
+  // Write one key onto this widget's inline shell.json entry.
+  function persistSetting(name, value) {
     if (!root.bar || !root.bar.shell || typeof root.bar.shell.updateEntryInline !== "function") return
     var entry = { id: root.moduleName }
     for (var key in settings) if (key !== "id") entry[key] = settings[key]
-    entry.recentLocations = next
+    entry[name] = value
     root.bar.shell.updateEntryInline(root.moduleName, entry)
+  }
+
+  function toggleConnectionDetails() {
+    revealConnection = !revealConnection
+    persistSetting("showConnection", revealConnection)
   }
 
   function chooseLocation(loc) {
@@ -168,6 +183,7 @@ Panel {
 
   function activate(id) {
     if (id === "toggle") mullvad.toggleConnection()
+    else if (id === "details") toggleConnectionDetails()
     else if (id === "ipv4") mullvad.copyToClipboard(mullvad.status.ipv4)
     else if (id === "ipv6") mullvad.copyToClipboard(mullvad.status.ipv6)
     else if (id === "relay") mullvad.copyToClipboard(mullvad.status.hostname)
@@ -238,6 +254,7 @@ Panel {
     function reconnect(): string { mullvad.reconnect(); return "ok" }
     function toggleConnection(): string { mullvad.toggleConnection(); return "ok" }
     function locations(): void { root.open(); root.openPicker() }
+    function toggleDetails(): string { root.toggleConnectionDetails(); return root.revealConnection ? "shown" : "hidden" }
     function status(): string { return mullvad.statusText + (mullvad.locationText !== "" ? " · " + mullvad.locationText : "") }
   }
 
@@ -283,6 +300,7 @@ Panel {
         if (k === "t") mullvad.toggleConnection()
         else if (k === "r") mullvad.reconnect()
         else if (k === "c") mullvad.copyToClipboard(mullvad.status.ipv4)
+        else if (k === "i") root.toggleConnectionDetails()
         else if (k === "s" || k === "/") root.openPicker()
       }
 
@@ -406,38 +424,52 @@ Panel {
               fontFamily: root.fontFamily
             }
 
-            InfoRow {
-              rowId: "ipv4"; icon: "󰩟"; label: "Exit IP"
-              value: mullvad.status.ipv4
+            SettingRow {
+              rowId: "details"
+              title: "Show details"
+              subtitle: "Exit IP, relay, and server"
+              checked: root.revealConnection
+              blockedWhileBusy: false
             }
-            InfoRow {
-              rowId: "ipv6"; icon: "󰩟"; label: "Exit IPv6"
-              value: mullvad.status.ipv6
-            }
-            InfoRow {
-              rowId: "relay"; icon: "󰒍"; label: "Relay"
-              value: mullvad.status.hostname
-            }
-            InfoRow {
-              rowId: "entry"; icon: "󰓡"; label: "Entry relay"
-              value: mullvad.status.entryHostname
-            }
-            InfoRow {
-              rowId: "endpoint"; icon: "󰖟"; label: "Server"
-              value: mullvad.status.endpoint
-            }
-            InfoRow {
-              rowId: ""; icon: "󰖂"; label: "Tunnel"
-              value: {
-                var parts = []
-                if (mullvad.status.protocol !== "") parts.push("WireGuard/" + mullvad.status.protocol)
-                if (mullvad.status.obfuscation !== "") parts.push(mullvad.status.obfuscation)
-                return parts.join(" · ")
+
+            Column {
+              visible: root.revealConnection
+              width: parent.width
+              spacing: Style.space(4)
+
+              InfoRow {
+                rowId: "ipv4"; icon: "󰩟"; label: "Exit IP"
+                value: mullvad.status.ipv4
               }
+              InfoRow {
+                rowId: "ipv6"; icon: "󰩟"; label: "Exit IPv6"
+                value: mullvad.status.ipv6
+              }
+              InfoRow {
+                rowId: "relay"; icon: "󰒍"; label: "Relay"
+                value: mullvad.status.hostname
+              }
+              InfoRow {
+                rowId: "entry"; icon: "󰓡"; label: "Entry relay"
+                value: mullvad.status.entryHostname
+              }
+              InfoRow {
+                rowId: "endpoint"; icon: "󰖟"; label: "Server"
+                value: mullvad.status.endpoint
+              }
+              InfoRow {
+                rowId: ""; icon: "󰖂"; label: "Tunnel"
+                value: {
+                  var parts = []
+                  if (mullvad.status.protocol !== "") parts.push("WireGuard/" + mullvad.status.protocol)
+                  if (mullvad.status.obfuscation !== "") parts.push(mullvad.status.obfuscation)
+                  return parts.join(" · ")
+                }
+              }
+              InfoRow {
+                rowId: ""; icon: "󰒃"; label: "Features"
+                value: mullvad.status.features.length > 0 ? mullvad.status.features.join(", ") : ""
             }
-            InfoRow {
-              rowId: ""; icon: "󰒃"; label: "Features"
-              value: mullvad.status.features.length > 0 ? mullvad.status.features.join(", ") : ""
             }
           }
 
@@ -533,6 +565,41 @@ Panel {
             }
           }
 
+          // ── Account ─────────────────────────────────────────────────────
+          PanelSeparator { visible: mullvad.installed; foreground: root.foreground }
+
+          Column {
+            visible: mullvad.installed
+            width: parent.width
+            spacing: Style.space(6)
+
+            PanelSectionHeader {
+              text: "ACCOUNT"
+              foreground: root.foreground
+              fontFamily: root.fontFamily
+            }
+
+            ActionRow {
+              rowId: "account"
+              icon: "󰃰"
+              title: Model.accountExpiryLabel(mullvad.account)
+              subtitle: mullvad.account.deviceName !== "" ? "This device: " + mullvad.account.deviceName : "Manage account"
+              warn: mullvad.accountExpiringSoon
+              trailing: "󰏌"
+
+            }
+
+            ActionRow {
+              visible: mullvad.version.upgrade !== ""
+              rowId: "update"
+              icon: "󰚰"
+              title: "Update available: " + mullvad.version.upgrade
+              subtitle: "Installed " + mullvad.version.current + (mullvad.version.supported ? "" : " (no longer supported)")
+              warn: !mullvad.version.supported
+              trailing: "󰏌"
+            }
+          }
+
           // ── Settings ────────────────────────────────────────────────────
           PanelSeparator { visible: mullvad.installed; foreground: root.foreground }
 
@@ -567,41 +634,6 @@ Panel {
               subtitle: "Reach printers and devices on your LAN"
               checked: mullvad.lanSharing
               pending: mullvad.settingKey === "lanSharing"
-            }
-          }
-
-          // ── Account ─────────────────────────────────────────────────────
-          PanelSeparator { visible: mullvad.installed; foreground: root.foreground }
-
-          Column {
-            visible: mullvad.installed
-            width: parent.width
-            spacing: Style.space(6)
-
-            PanelSectionHeader {
-              text: "ACCOUNT"
-              foreground: root.foreground
-              fontFamily: root.fontFamily
-            }
-
-            ActionRow {
-              rowId: "account"
-              icon: "󰃰"
-              title: Model.accountExpiryLabel(mullvad.account)
-              subtitle: mullvad.account.deviceName !== "" ? "This device: " + mullvad.account.deviceName : "Manage account"
-              warn: mullvad.accountExpiringSoon
-              trailing: "󰏌"
-
-            }
-
-            ActionRow {
-              visible: mullvad.version.upgrade !== ""
-              rowId: "update"
-              icon: "󰚰"
-              title: "Update available: " + mullvad.version.upgrade
-              subtitle: "Installed " + mullvad.version.current + (mullvad.version.supported ? "" : " (no longer supported)")
-              warn: !mullvad.version.supported
-              trailing: "󰏌"
             }
           }
         }
@@ -775,6 +807,8 @@ Panel {
     property string subtitle: ""
     property bool checked: false
     property bool pending: false
+    property bool blockedWhileBusy: true
+    readonly property bool blocked: blockedWhileBusy && mullvad.busy
 
     width: parent ? parent.width : 0
     hasCursor: root.cursorActive && root.cursorId === rowId
@@ -827,9 +861,9 @@ Panel {
     MouseArea {
       anchors.fill: parent
       hoverEnabled: true
-      cursorShape: mullvad.busy ? Qt.ArrowCursor : Qt.PointingHandCursor
+      cursorShape: settingRow.blocked ? Qt.ArrowCursor : Qt.PointingHandCursor
       onEntered: root.setCursor(settingRow.rowId)
-      onClicked: if (!mullvad.busy) root.activate(settingRow.rowId)
+      onClicked: if (!settingRow.blocked) root.activate(settingRow.rowId)
     }
   }
 

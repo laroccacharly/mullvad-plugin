@@ -10,13 +10,14 @@ Omarchy's first-party Tailscale widget. It gets everything from the `mullvad` CL
 - Live updates from `mullvad status --json listen`, with a periodic poll as a fallback.
 - Hero with the exit city and country, the relay hostname, and an on/off switch.
 - **Connection**: exit IPv4/IPv6, relay, entry relay (multihop), tunnel protocol and
-  endpoint, and active features such as quantum resistance or DAITA. Click a row to copy it.
+  endpoint, and active features such as quantum resistance or DAITA. These are hidden
+  behind a **Show details** switch by default, since they identify you. Click a row to copy it.
 - **Location**: the current relay constraint, your last three picks, and a searchable
   country/city picker built from `mullvad relay list`. Picking a location connects to it.
   **Reconnect** switches to a different server in the same location.
-- **Settings**: lockdown mode, auto-connect, and local network sharing.
 - **Account**: days until expiry, the device name, and a link to the account page. Also
   shows a notice when Mullvad suggests an upgrade. The account number is never read into the panel.
+- **Settings**: lockdown mode, auto-connect, and local network sharing.
 
 ## Mouse
 
@@ -31,6 +32,7 @@ Omarchy's first-party Tailscale widget. It gets everything from the `mullvad` CL
 - `t`: connect / disconnect
 - `r`: reconnect
 - `c`: copy the exit IP
+- `i`: show / hide connection details
 - `s` or `/`: open the location search (`↑`/`↓` to pick, `enter` to connect, `esc` to close)
 - `tab`: switch to the next bar panel
 - `esc`: close
@@ -44,6 +46,7 @@ bun mullvad-plugin run                     # list the available methods
 bun mullvad-plugin run toggle
 bun mullvad-plugin run toggleConnection
 bun mullvad-plugin run locations           # open the panel on the location search
+bun mullvad-plugin run toggleDetails       # show / hide the connection details
 bun mullvad-plugin run connect | disconnect | reconnect | refresh
 bun mullvad-plugin run status
 ```
@@ -59,6 +62,7 @@ These go inline on the widget's entry in `~/.config/omarchy/shell.json`:
 | `refreshIntervalSec` | `30`    | Poll interval for status and settings            |
 | `expiryWarningDays`  | `7`     | Turn the icon urgent this many days before expiry |
 | `recentLocations`    | —       | Written by the panel; recently picked locations   |
+| `showConnection`     | `false` | Written by the panel; connection details shown    |
 
 ## Install
 
