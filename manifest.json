@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "clarocca.mullvad",
+  "name": "Mullvad VPN",
+  "version": "0.1.0",
+  "author": "clarocca",
+  "license": "MIT",
+  "description": "Mullvad VPN status, exit location and IP, relay switching, quick settings, and account expiry in the Omarchy bar.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Mullvad VPN",
+    "description": "Connect or disconnect Mullvad, see where you exit, switch location, and toggle lockdown, auto-connect, and LAN sharing.",
+    "category": "Network",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "refreshIntervalSec": 30,
+      "expiryWarningDays": 7
+    },
+    "schema": [
+      {
+        "key": "refreshIntervalSec",
+        "type": "integer",
+        "label": "Refresh interval (seconds)",
+        "min": 5,
+        "max": 3600,
+        "step": 5,
+        "defaultValue": 30
+      },
+      {
+        "key": "expiryWarningDays",
+        "type": "integer",
+        "label": "Warn when account expires within (days)",
+        "min": 0,
+        "max": 365,
+        "step": 1,
+        "defaultValue": 7
+      }
+    ]
+  }
+}
